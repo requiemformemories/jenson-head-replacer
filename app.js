@@ -21,12 +21,26 @@ async function init() {
     ctx = canvas.getContext('2d');
 
     // 載入 Jenson head 圖片
+    updateStatus('正在載入 Jenson head 圖片...');
     jensonHeadImage = new Image();
     jensonHeadImage.src = 'jenson_head.webp';
-    await new Promise((resolve, reject) => {
-        jensonHeadImage.onload = resolve;
-        jensonHeadImage.onerror = () => reject(new Error('無法載入 jenson_head.webp'));
-    });
+
+    try {
+        await new Promise((resolve, reject) => {
+            jensonHeadImage.onload = () => {
+                console.log('Jenson head 圖片載入成功:', jensonHeadImage.width, 'x', jensonHeadImage.height);
+                resolve();
+            };
+            jensonHeadImage.onerror = (e) => {
+                console.error('圖片載入錯誤:', e);
+                reject(new Error('無法載入 jenson_head.webp'));
+            };
+        });
+        updateStatus('圖片載入完成');
+    } catch (error) {
+        updateStatus('圖片載入失敗: ' + error.message, 'error');
+        return;
+    }
 
     // 載入人臉偵測模型
     updateStatus('正在載入人臉偵測模型...');
@@ -55,12 +69,21 @@ async function startCamera() {
         video.addEventListener('loadedmetadata', () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            console.log('Canvas 設定尺寸:', canvas.width, 'x', canvas.height);
+        });
+
+        // 等待 video 開始播放
+        video.addEventListener('playing', () => {
+            console.log('Video 開始播放');
             updateStatus('相機已開啟，正在偵測人臉...', 'success');
             startButton.textContent = '停止';
             startButton.onclick = stopCamera;
             isDetecting = true;
             detectFaces();
-        });
+        }, { once: true });
+
+        // 開始播放
+        await video.play();
     } catch (error) {
         updateStatus('無法存取相機: ' + error.message, 'error');
     }
@@ -84,17 +107,24 @@ function stopCamera() {
 async function detectFaces() {
     if (!isDetecting) return;
 
-    // 清除 canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 檢查 video 是否準備好
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+        requestAnimationFrame(detectFaces);
+        return;
+    }
+
+    // 步驟 1: 先繪製整個 video 畫面到 canvas（類似 MDN 的 computeFrame）
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     try {
-        // 偵測人臉
+        // 步驟 2: 偵測人臉
         const predictions = await model.estimateFaces(video, false);
 
         if (predictions.length > 0) {
             updateStatus(`偵測到 ${predictions.length} 個人臉`, 'success');
 
-            predictions.forEach(prediction => {
+            // 步驟 3: 在偵測到的人臉位置繪製 Jenson head
+            predictions.forEach((prediction, index) => {
                 // 取得人臉位置
                 const start = prediction.topLeft;
                 const end = prediction.bottomRight;
@@ -107,19 +137,27 @@ async function detectFaces() {
                 const offsetX = (expandedWidth - size[0]) / 2;
                 const offsetY = (expandedHeight - size[1]) / 2;
 
-                // 繪製 Jenson head 圖片
+                const drawX = start[0] - offsetX;
+                const drawY = start[1] - offsetY;
+
+                // 繪製 Jenson head 圖片覆蓋在人臉上
                 ctx.drawImage(
                     jensonHeadImage,
-                    start[0] - offsetX,
-                    start[1] - offsetY,
+                    drawX,
+                    drawY,
                     expandedWidth,
                     expandedHeight
                 );
 
-                // 可選：繪製偵測框（除錯用）
-                // ctx.strokeStyle = '#00ff00';
-                // ctx.lineWidth = 2;
-                // ctx.strokeRect(start[0], start[1], size[0], size[1]);
+                // 繪製偵測框（除錯用）
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(start[0], start[1], size[0], size[1]);
+
+                // 繪製替換區域框（紅色）
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(drawX, drawY, expandedWidth, expandedHeight);
             });
         } else {
             updateStatus('未偵測到人臉');
@@ -128,7 +166,7 @@ async function detectFaces() {
         console.error('偵測錯誤:', error);
     }
 
-    // 繼續偵測
+    // 繼續偵測下一幀
     requestAnimationFrame(detectFaces);
 }
 
