@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jenson Head Replacer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Jenson Head Replacer</h1>
+        <div class="video-container">
+            <video id="video" autoplay muted></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        <div class="controls">
+            <button id="startButton">開啟相機</button>
+            <div id="status">準備就緒</div>
+        </div>
+    </div>
+
+    <!-- Load face-api.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7"></script>
+    <script src="app.js"></script>
+</body>
+</html>
