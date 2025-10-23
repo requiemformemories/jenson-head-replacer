@@ -58,12 +58,22 @@ async function init() {
 async function startCamera() {
     try {
         updateStatus('正在開啟相機...');
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 640 },
-                height: { ideal: 480 }
+
+        // 偵測是否為手機
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        const constraints = {
+            video: isMobile ? {
+                facingMode: 'environment', // 手機使用後置鏡頭
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } : {
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
             }
-        });
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
         video.srcObject = stream;
 

@@ -40,6 +40,8 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+    aspect-ratio: 4 / 3; /* 預設長寬比 */
 }
 
 #video {
@@ -49,7 +51,27 @@ h1 {
 #canvas {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover; /* 讓畫面填滿容器，裁切多餘部分 */
+}
+
+/* 手機版優化 */
+@media (max-width: 768px) {
+    .video-container {
+        max-width: 100%;
+        border-radius: 0;
+        aspect-ratio: auto; /* 手機上使用實際相機比例 */
+        min-height: 60vh; /* 至少佔據 60% 視窗高度 */
+    }
+
+    h1 {
+        font-size: 1.5em;
+        margin-bottom: 20px;
+    }
+
+    .container {
+        padding: 20px;
+    }
 }
 
 .controls {
