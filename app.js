@@ -5,9 +5,9 @@ let model;
 let jensonHeadImage;
 let isDetecting = false;
 let detectionInterval = null;
-let currentStream = null; // 追蹤當前的串流
-let expandRatio = 1.75; // 可配置的擴展比例
-let currentLang = 'zh-TW'; // 當前語言
+let currentStream = null; // Track current stream
+let expandRatio = 1.75; // Configurable expansion ratio
+let currentLang = 'zh-TW'; // Current language
 
 const startButton = document.getElementById('startButton');
 const statusDiv = document.getElementById('status');
@@ -16,7 +16,7 @@ const expandRatioSlider = document.getElementById('expandRatio');
 const ratioValue = document.getElementById('ratioValue');
 const resetConfigButton = document.getElementById('resetConfig');
 
-// 多語言翻譯
+// Translations for i18n
 const translations = {
     'zh-TW': {
         title: 'Jenson Head Replacer',
@@ -78,27 +78,27 @@ const translations = {
     }
 };
 
-// 翻譯函數
+// Translation function
 function t(key, params = {}) {
     let text = translations[currentLang][key] || key;
-    // 替換參數
+    // Replace parameters
     Object.keys(params).forEach(param => {
         text = text.replace(`{${param}}`, params[param]);
     });
     return text;
 }
 
-// 更新頁面語言
+// Update page language
 function updateLanguage(lang) {
     currentLang = lang;
 
-    // 更新所有帶有 data-i18n 的元素
+    // Update all elements with data-i18n attribute
     document.querySelectorAll('[data-i18n]').forEach(element => {
         const key = element.getAttribute('data-i18n');
         element.textContent = t(key);
     });
 
-    // 更新按鈕 active 狀態
+    // Update button active state
     document.querySelectorAll('.lang-btn').forEach(btn => {
         if (btn.getAttribute('data-lang') === lang) {
             btn.classList.add('active');
@@ -107,27 +107,27 @@ function updateLanguage(lang) {
         }
     });
 
-    // 儲存語言偏好
+    // Save language preference
     localStorage.setItem('preferredLanguage', lang);
 }
 
-// 更新狀態訊息
+// Update status message
 function updateStatus(message, type = 'normal') {
     statusDiv.textContent = message;
     statusDiv.className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
 }
 
-// 初始化
+// Initialize application
 async function init() {
     video = document.getElementById('video');
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
 
-    // 載入語言偏好
+    // Load language preference
     const savedLang = localStorage.getItem('preferredLanguage') || 'zh-TW';
     updateLanguage(savedLang);
 
-    // 載入 Jenson head 圖片
+    // Load Jenson head image
     updateStatus(t('statusLoadingImage'));
     jensonHeadImage = new Image();
     jensonHeadImage.src = 'jenson_head.webp';
@@ -139,8 +139,8 @@ async function init() {
                 resolve();
             };
             jensonHeadImage.onerror = (e) => {
-                console.error('圖片載入錯誤:', e);
-                reject(new Error('無法載入 jenson_head.webp'));
+                console.error('Image load error:', e);
+                reject(new Error('Failed to load jenson_head.webp'));
             };
         });
         updateStatus(t('statusImageLoaded'));
@@ -149,7 +149,7 @@ async function init() {
         return;
     }
 
-    // 載入人臉偵測模型
+    // Load face detection model
     updateStatus(t('statusLoadingModel'));
     try {
         model = await blazeface.load();
@@ -160,16 +160,16 @@ async function init() {
     }
 }
 
-// 開啟相機
+// Start camera
 async function startCamera() {
     try {
-        // 先確保之前的相機已經完全停止
+        // Ensure previous camera is fully stopped
         if (currentStream) {
             currentStream.getTracks().forEach(track => track.stop());
             currentStream = null;
         }
 
-        // 清除之前的計時器
+        // Clear previous interval
         if (detectionInterval) {
             clearInterval(detectionInterval);
             detectionInterval = null;
@@ -177,12 +177,12 @@ async function startCamera() {
 
         updateStatus(t('statusOpeningCamera'));
 
-        // 偵測是否為手機
+        // Detect if mobile device
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         const constraints = {
             video: isMobile ? {
-                facingMode: 'environment', // 手機使用後置鏡頭
+                facingMode: 'environment', // Use rear camera on mobile
                 width: { ideal: 1280 },
                 height: { ideal: 720 }
             } : {
@@ -192,36 +192,36 @@ async function startCamera() {
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        currentStream = stream; // 保存串流引用
+        currentStream = stream; // Save stream reference
 
         video.srcObject = stream;
 
-        // 等待 metadata 載入（使用 once 選項）
+        // Wait for metadata to load (using once option)
         await new Promise((resolve) => {
             const handler = () => {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                console.log('Canvas 設定尺寸:', canvas.width, 'x', canvas.height);
+                console.log('Canvas dimensions set:', canvas.width, 'x', canvas.height);
                 resolve();
             };
             video.addEventListener('loadedmetadata', handler, { once: true });
         });
 
-        // 開始播放
+        // Start playback
         await video.play();
 
-        // 播放成功後開始偵測
-        console.log('Video 開始播放');
+        // Start detection after playback begins
+        console.log('Video playback started');
         updateStatus(t('statusCameraOpened'), 'success');
         startButton.textContent = t('resetCameraButton');
         startButton.onclick = resetCamera;
         isDetecting = true;
-        // 使用 setInterval 每 1/60 秒 (約 16.67ms) 執行一次
+        // Use setInterval to run every 1/60 second (~16.67ms)
         detectionInterval = setInterval(detectFaces, 1000 / 60);
 
     } catch (error) {
         updateStatus(t('errorCameraAccess') + ': ' + error.message, 'error');
-        // 清理
+        // Cleanup
         if (currentStream) {
             currentStream.getTracks().forEach(track => track.stop());
             currentStream = null;
@@ -229,33 +229,33 @@ async function startCamera() {
     }
 }
 
-// 重啟相機
+// Reset camera
 async function resetCamera() {
-    console.log('重啟相機');
+    console.log('Resetting camera');
 
     updateStatus(t('statusResetting'));
     startButton.disabled = true;
 
-    // 先設置標誌為 false
+    // Set flag to false
     isDetecting = false;
 
-    // 清除計時器
+    // Clear interval
     if (detectionInterval) {
         clearInterval(detectionInterval);
         detectionInterval = null;
-        console.log('已清除計時器');
+        console.log('Interval cleared');
     }
 
-    // 停止相機串流
+    // Stop camera stream
     if (currentStream) {
         currentStream.getTracks().forEach(track => {
             track.stop();
-            console.log('已停止 track:', track.kind);
+            console.log('Stopped track:', track.kind);
         });
         currentStream = null;
     }
 
-    // 清除 video source
+    // Clear video source
     if (video) {
         video.pause();
         video.srcObject = null;
@@ -264,63 +264,63 @@ async function resetCamera() {
         video.onplaying = null;
     }
 
-    // 清空 canvas
+    // Clear canvas
     if (ctx && canvas) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 等待一小段時間確保資源釋放
+    // Wait briefly to ensure resources are released
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    // 重新啟動相機
+    // Restart camera
     startButton.disabled = false;
     await startCamera();
 }
 
-// 偵測人臉並替換
+// Detect faces and replace
 async function detectFaces() {
     if (!isDetecting) return;
 
-    // 檢查 video 是否準備好
+    // Check if video is ready
     if (video.readyState !== video.HAVE_ENOUGH_DATA) {
         return;
     }
 
     try {
-        // 步驟 1: 先偵測人臉（從 video 元素）
+        // Step 1: Detect faces (from video element)
         const predictions = await model.estimateFaces(video, false);
 
-        // 步驟 2: 繪製整個 video 畫面到 canvas
+        // Step 2: Draw entire video frame to canvas
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (predictions.length > 0) {
             updateStatus(t('statusDetecting', { count: predictions.length }), 'success');
 
-            // 步驟 3: 在偵測到的人臉位置繪製 Jenson head
+            // Step 3: Draw Jenson head at detected face positions
             predictions.forEach((prediction) => {
-                // 取得人臉位置
+                // Get face position
                 const start = prediction.topLeft;
                 const end = prediction.bottomRight;
                 const size = [end[0] - start[0], end[1] - start[1]];
 
-                // 計算 Jenson head 圖片的長寬比
+                // Calculate Jenson head image aspect ratio
                 const jensonAspectRatio = jensonHeadImage.width / jensonHeadImage.height;
 
-                // 使用可配置的擴大範圍
+                // Use configurable expansion range
                 const faceWidth = size[0] * expandRatio;
 
-                // 根據圖片的長寬比計算高度，保持比例
+                // Calculate height based on aspect ratio to maintain proportions
                 let drawWidth = faceWidth;
                 let drawHeight = drawWidth / jensonAspectRatio;
 
-                // 計算中心對齊的位置
+                // Calculate center-aligned position
                 const faceCenterX = start[0] + size[0] / 2;
                 const faceCenterY = start[1] + size[1] / 2;
 
                 const drawX = faceCenterX - drawWidth / 2;
                 const drawY = faceCenterY - drawHeight / 2;
 
-                // 繪製 Jenson head 圖片覆蓋在人臉上（保持原始比例）
+                // Draw Jenson head image over face (maintaining original aspect ratio)
                 ctx.drawImage(
                     jensonHeadImage,
                     drawX,
@@ -329,31 +329,31 @@ async function detectFaces() {
                     drawHeight
                 );
 
-                // 繪製偵測框（除錯用）
+                // Draw detection box (for debugging)
                 // ctx.strokeStyle = '#00ff00';
                 // ctx.lineWidth = 3;
                 // ctx.strokeRect(start[0], start[1], size[0], size[1]);
 
-                // 繪製替換區域框（紅色）
+                // Draw replacement area box (red)
                 // ctx.strokeStyle = '#ff0000';
                 // ctx.lineWidth = 2;
-                // ctx.strokeRect(drawX, drawY, expandedWidth, expandedHeight);
+                // ctx.strokeRect(drawX, drawY, drawWidth, drawHeight);
             });
         } else {
             updateStatus(t('statusNoFace'));
         }
     } catch (error) {
-        console.error('偵測錯誤:', error);
+        console.error('Detection error:', error);
     }
 }
 
-// 綁定按鈕事件
+// Bind button events
 startButton.addEventListener('click', startCamera);
 startButton.disabled = true;
 
-// 配置功能
+// Configuration features
 
-// 上傳圖片
+// Upload image
 imageUpload.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -369,7 +369,7 @@ imageUpload.addEventListener('change', async (event) => {
             await new Promise((resolve, reject) => {
                 newImage.onload = () => {
                     jensonHeadImage = newImage;
-                    console.log('已載入新圖片:', jensonHeadImage.width, 'x', jensonHeadImage.height);
+                    console.log('New image loaded:', jensonHeadImage.width, 'x', jensonHeadImage.height);
                     updateStatus(t('statusNewImageLoaded'), 'success');
                     resolve();
                 };
@@ -382,38 +382,38 @@ imageUpload.addEventListener('change', async (event) => {
     }
 });
 
-// 調整大小比例
+// Adjust size ratio
 expandRatioSlider.addEventListener('input', (event) => {
     expandRatio = parseFloat(event.target.value);
     ratioValue.textContent = expandRatio.toFixed(2);
 });
 
-// 重置配置
+// Reset configuration
 resetConfigButton.addEventListener('click', async () => {
-    // 重置比例
+    // Reset ratio
     expandRatio = 1.75;
     expandRatioSlider.value = 1.75;
     ratioValue.textContent = '1.75';
 
-    // 重新載入預設圖片
+    // Reload default image
     updateStatus(t('statusResetConfig'));
     jensonHeadImage = new Image();
     jensonHeadImage.src = 'jenson_head.webp';
 
     await new Promise((resolve, reject) => {
         jensonHeadImage.onload = () => {
-            console.log('已重置為預設圖片');
+            console.log('Reset to default image');
             updateStatus(t('statusConfigReset'), 'success');
             resolve();
         };
         jensonHeadImage.onerror = reject;
     });
 
-    // 清除檔案輸入
+    // Clear file input
     imageUpload.value = '';
 });
 
-// 語言切換事件
+// Language switch events
 document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const lang = btn.getAttribute('data-lang');
@@ -421,7 +421,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
     });
 });
 
-// 啟動應用程式
+// Start application
 init().catch(error => {
     updateStatus(t('errorInit') + ': ' + error.message, 'error');
 });

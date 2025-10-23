@@ -23,7 +23,7 @@ body {
     width: 100%;
 }
 
-/* 語言切換器 */
+/* Language switcher */
 .language-switcher {
     display: flex;
     justify-content: flex-end;
@@ -59,7 +59,7 @@ h1 {
     font-size: 2em;
 }
 
-/* 配置面板 */
+/* Configuration panel */
 .config-panel {
     margin-bottom: 20px;
     background: #f8f9fa;
@@ -188,7 +188,7 @@ h1 {
     justify-content: center;
     align-items: center;
     position: relative;
-    aspect-ratio: 4 / 3; /* 預設長寬比 */
+    aspect-ratio: 4 / 3; /* Default aspect ratio */
 }
 
 #video {
@@ -199,16 +199,16 @@ h1 {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* 讓畫面填滿容器，裁切多餘部分 */
+    object-fit: cover; /* Fill container and crop excess */
 }
 
-/* 手機版優化 */
+/* Mobile optimization */
 @media (max-width: 768px) {
     .video-container {
         max-width: 100%;
         border-radius: 0;
-        aspect-ratio: auto; /* 手機上使用實際相機比例 */
-        min-height: 60vh; /* 至少佔據 60% 視窗高度 */
+        aspect-ratio: auto; /* Use actual camera aspect ratio on mobile */
+        min-height: 60vh; /* At least 60% of viewport height */
     }
 
     h1 {
