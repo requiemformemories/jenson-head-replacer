@@ -26,8 +26,126 @@ body {
 h1 {
     text-align: center;
     color: #333;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     font-size: 2em;
+}
+
+/* 配置面板 */
+.config-panel {
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.config-panel details {
+    cursor: pointer;
+}
+
+.config-panel summary {
+    padding: 15px 20px;
+    font-weight: 600;
+    color: #667eea;
+    user-select: none;
+    background: #f8f9fa;
+    transition: background 0.3s ease;
+}
+
+.config-panel summary:hover {
+    background: #e9ecef;
+}
+
+.config-panel details[open] summary {
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 15px;
+}
+
+.config-content {
+    padding: 0 20px 20px 20px;
+}
+
+.config-item {
+    margin-bottom: 20px;
+}
+
+.config-item:last-child {
+    margin-bottom: 0;
+}
+
+.config-item label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.config-item input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed #667eea;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.config-item input[type="file"]:hover {
+    border-color: #5568d3;
+    background: #f8f9fa;
+}
+
+.config-item input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e9ecef;
+    outline: none;
+    margin: 8px 0;
+}
+
+.config-item input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.config-item input[type="range"]::-webkit-slider-thumb:hover {
+    background: #5568d3;
+    transform: scale(1.2);
+}
+
+.config-item input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    border: none;
+}
+
+.config-item small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 0.85em;
+}
+
+.secondary-button {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: #5a6268;
 }
 
 .video-container {

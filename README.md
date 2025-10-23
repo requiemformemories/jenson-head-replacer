@@ -80,11 +80,16 @@ http-server -p 8000
 ## Usage
 
 1. Open the web page, the application will automatically load the face detection model
-2. Once loaded, click the "開啟相機" (Start Camera) button
-3. Allow browser camera permission
-4. After camera starts, the app will automatically detect faces in the frame
-5. Detected faces will be replaced with jenson_head.webp in real-time
-6. Click "停止" (Stop) button to turn off the camera
+2. **(Optional) Configure settings:**
+   - Click "⚙️ 設定" to expand the configuration panel
+   - Upload your own image to replace faces
+   - Adjust the size ratio with the slider (1.0x - 3.0x)
+   - Click "重置為預設值" to restore defaults
+3. Click the "開啟相機" (Start Camera) button
+4. Allow browser camera permission
+5. After camera starts, the app will automatically detect faces in the frame
+6. Detected faces will be replaced with your chosen image in real-time
+7. Click "重啟" (Reset) button to restart the camera
 
 ## How It Works
 
@@ -95,21 +100,23 @@ http-server -p 8000
 
 ## Customization
 
-### Change Replacement Image
+### Change Replacement Image (Easy Way - No Code)
 
-Rename your desired image to `jenson_head.webp` and place it in the project root, or modify the image path in `app.js`:
+1. Click "⚙️ 設定" to open the settings panel
+2. Click "上傳替換圖片" and select your image
+3. The new image will be used immediately
 
-```javascript
-jensonHeadImage.src = 'your_custom_image.png'; // Line 18
-```
+### Adjust Replacement Size (Easy Way - No Code)
 
-### Adjust Replacement Size
+1. Click "⚙️ 設定" to open the settings panel
+2. Use the "圖片大小比例" slider to adjust size
+3. Range: 1.0x (original face size) to 3.0x (3 times larger)
 
-Modify the `expandRatio` value in `app.js` (Line 95):
+### Reset to Defaults
 
-```javascript
-const expandRatio = 1.5; // Adjust this value to change image size (1.0 = original size)
-```
+Click "重置為預設值" button in the settings panel to restore:
+- Default jenson_head.webp image
+- Default size ratio (1.75x)
 
 ## Browser Support
 

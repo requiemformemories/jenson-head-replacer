@@ -6,9 +6,14 @@ let jensonHeadImage;
 let isDetecting = false;
 let detectionInterval = null;
 let currentStream = null; // 追蹤當前的串流
+let expandRatio = 1.75; // 可配置的擴展比例
 
 const startButton = document.getElementById('startButton');
 const statusDiv = document.getElementById('status');
+const imageUpload = document.getElementById('imageUpload');
+const expandRatioSlider = document.getElementById('expandRatio');
+const ratioValue = document.getElementById('ratioValue');
+const resetConfigButton = document.getElementById('resetConfig');
 
 // 更新狀態訊息
 function updateStatus(message, type = 'normal') {
@@ -201,8 +206,7 @@ async function detectFaces() {
                 // 計算 Jenson head 圖片的長寬比
                 const jensonAspectRatio = jensonHeadImage.width / jensonHeadImage.height;
 
-                // 擴大範圍以覆蓋整個頭部（增加 75%）
-                const expandRatio = 1.75;
+                // 使用可配置的擴大範圍
                 const faceWidth = size[0] * expandRatio;
 
                 // 根據圖片的長寬比計算高度，保持比例
@@ -246,6 +250,68 @@ async function detectFaces() {
 // 綁定按鈕事件
 startButton.addEventListener('click', startCamera);
 startButton.disabled = true;
+
+// 配置功能
+
+// 上傳圖片
+imageUpload.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        updateStatus('正在載入新圖片...');
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const newImage = new Image();
+            newImage.src = e.target.result;
+
+            await new Promise((resolve, reject) => {
+                newImage.onload = () => {
+                    jensonHeadImage = newImage;
+                    console.log('已載入新圖片:', jensonHeadImage.width, 'x', jensonHeadImage.height);
+                    updateStatus('新圖片載入成功！', 'success');
+                    resolve();
+                };
+                newImage.onerror = reject;
+            });
+        };
+        reader.readAsDataURL(file);
+    } catch (error) {
+        updateStatus('圖片載入失敗: ' + error.message, 'error');
+    }
+});
+
+// 調整大小比例
+expandRatioSlider.addEventListener('input', (event) => {
+    expandRatio = parseFloat(event.target.value);
+    ratioValue.textContent = expandRatio.toFixed(2);
+});
+
+// 重置配置
+resetConfigButton.addEventListener('click', async () => {
+    // 重置比例
+    expandRatio = 1.75;
+    expandRatioSlider.value = 1.75;
+    ratioValue.textContent = '1.75';
+
+    // 重新載入預設圖片
+    updateStatus('正在重置為預設圖片...');
+    jensonHeadImage = new Image();
+    jensonHeadImage.src = 'jenson_head.webp';
+
+    await new Promise((resolve, reject) => {
+        jensonHeadImage.onload = () => {
+            console.log('已重置為預設圖片');
+            updateStatus('已重置為預設值', 'success');
+            resolve();
+        };
+        jensonHeadImage.onerror = reject;
+    });
+
+    // 清除檔案輸入
+    imageUpload.value = '';
+});
 
 // 啟動應用程式
 init().catch(error => {
