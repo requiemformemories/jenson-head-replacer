@@ -98,26 +98,6 @@ http-server -p 8000
 3. **Image Replacement**: Draws camera feed on Canvas and replaces detected face areas with custom image
 4. **Real-time Rendering**: Uses `requestAnimationFrame` for smooth real-time rendering
 
-## Customization
-
-### Change Replacement Image (Easy Way - No Code)
-
-1. Click "⚙️ 設定" to open the settings panel
-2. Click "上傳替換圖片" and select your image
-3. The new image will be used immediately
-
-### Adjust Replacement Size (Easy Way - No Code)
-
-1. Click "⚙️ 設定" to open the settings panel
-2. Use the "圖片大小比例" slider to adjust size
-3. Range: 1.0x (original face size) to 3.0x (3 times larger)
-
-### Reset to Defaults
-
-Click "重置為預設值" button in the settings panel to restore:
-- Default jenson_head.webp image
-- Default size ratio (1.75x)
-
 ## Browser Support
 
 - Chrome 60+
@@ -134,25 +114,8 @@ Required browser features:
 ## Notes
 
 - This application requires camera permission to function
-- HTTPS or localhost environment recommended
 - Face detection performance depends on device performance
 - Recommended to use newer computers for better performance
-
-## Troubleshooting
-
-**Issue: Camera won't open**
-- Confirm browser has granted camera permission
-- Ensure using HTTPS or localhost
-- Check if another application is using the camera
-
-**Issue: Model loading failed**
-- Confirm internet connection is stable (model loads from CDN)
-- Try refreshing the page
-
-**Issue: Poor detection performance**
-- Ensure adequate lighting
-- Lower video resolution
-- Try using a newer device
 
 ## License
 
