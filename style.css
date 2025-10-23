@@ -23,6 +23,35 @@ body {
     width: 100%;
 }
 
+/* 語言切換器 */
+.language-switcher {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.lang-btn {
+    padding: 8px 16px;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.lang-btn:hover {
+    background: #f8f9fa;
+}
+
+.lang-btn.active {
+    background: #667eea;
+    color: white;
+}
+
 h1 {
     text-align: center;
     color: #333;

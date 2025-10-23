@@ -8,25 +8,31 @@
 </head>
 <body>
     <div class="container">
-        <h1>Jenson Head Replacer</h1>
+        <!-- 語言切換 -->
+        <div class="language-switcher">
+            <button class="lang-btn active" data-lang="zh-TW">繁中</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+
+        <h1 data-i18n="title">Jenson Head Replacer</h1>
 
         <!-- 配置面板 -->
         <div class="config-panel">
             <details>
-                <summary>⚙️ 設定</summary>
+                <summary>⚙️ <span data-i18n="settings">設定</span></summary>
                 <div class="config-content">
                     <div class="config-item">
-                        <label for="imageUpload">上傳替換圖片：</label>
+                        <label for="imageUpload" data-i18n="uploadLabel">上傳替換圖片：</label>
                         <input type="file" id="imageUpload" accept="image/*">
-                        <small>選擇要替換人臉的圖片</small>
+                        <small data-i18n="uploadHint">選擇要替換人臉的圖片</small>
                     </div>
                     <div class="config-item">
-                        <label for="expandRatio">圖片大小比例：<span id="ratioValue">1.75</span>x</label>
+                        <label for="expandRatio"><span data-i18n="sizeLabel">圖片大小比例：</span><span id="ratioValue">1.75</span>x</label>
                         <input type="range" id="expandRatio" min="1" max="3" step="0.05" value="1.75">
-                        <small>調整替換圖片的大小（1.0 = 原始人臉大小）</small>
+                        <small data-i18n="sizeHint">調整替換圖片的大小（1.0 = 原始人臉大小）</small>
                     </div>
                     <div class="config-item">
-                        <button id="resetConfig" class="secondary-button">重置為預設值</button>
+                        <button id="resetConfig" class="secondary-button" data-i18n="resetButton">重置為預設值</button>
                     </div>
                 </div>
             </details>
@@ -37,8 +43,8 @@
             <canvas id="canvas"></canvas>
         </div>
         <div class="controls">
-            <button id="startButton">開啟相機</button>
-            <div id="status">準備就緒</div>
+            <button id="startButton" data-i18n="startButton">開啟相機</button>
+            <div id="status" data-i18n="statusReady">準備就緒</div>
         </div>
     </div>
 
