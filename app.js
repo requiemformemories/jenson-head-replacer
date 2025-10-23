@@ -4,6 +4,7 @@ let ctx;
 let model;
 let jensonHeadImage;
 let isDetecting = false;
+let detectionInterval = null;
 
 const startButton = document.getElementById('startButton');
 const statusDiv = document.getElementById('status');
@@ -79,7 +80,8 @@ async function startCamera() {
             startButton.textContent = '停止';
             startButton.onclick = stopCamera;
             isDetecting = true;
-            detectFaces();
+            // 使用 setInterval 每 1/60 秒 (約 16.67ms) 執行一次
+            detectionInterval = setInterval(detectFaces, 1000 / 60);
         }, { once: true });
 
         // 開始播放
@@ -92,6 +94,11 @@ async function startCamera() {
 // 停止相機
 function stopCamera() {
     isDetecting = false;
+    // 清除計時器
+    if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+    }
     const stream = video.srcObject;
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -109,29 +116,28 @@ async function detectFaces() {
 
     // 檢查 video 是否準備好
     if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-        requestAnimationFrame(detectFaces);
         return;
     }
 
-    // 步驟 1: 先繪製整個 video 畫面到 canvas（類似 MDN 的 computeFrame）
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
     try {
-        // 步驟 2: 偵測人臉
+        // 步驟 1: 先偵測人臉（從 video 元素）
         const predictions = await model.estimateFaces(video, false);
+
+        // 步驟 2: 繪製整個 video 畫面到 canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (predictions.length > 0) {
             updateStatus(`偵測到 ${predictions.length} 個人臉`, 'success');
 
             // 步驟 3: 在偵測到的人臉位置繪製 Jenson head
-            predictions.forEach((prediction, index) => {
+            predictions.forEach((prediction) => {
                 // 取得人臉位置
                 const start = prediction.topLeft;
                 const end = prediction.bottomRight;
                 const size = [end[0] - start[0], end[1] - start[1]];
 
-                // 擴大範圍以覆蓋整個頭部（增加 50%）
-                const expandRatio = 1.5;
+                // 擴大範圍以覆蓋整個頭部（增加 75%）
+                const expandRatio = 1.75;
                 const expandedWidth = size[0] * expandRatio;
                 const expandedHeight = size[1] * expandRatio;
                 const offsetX = (expandedWidth - size[0]) / 2;
@@ -150,14 +156,14 @@ async function detectFaces() {
                 );
 
                 // 繪製偵測框（除錯用）
-                ctx.strokeStyle = '#00ff00';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(start[0], start[1], size[0], size[1]);
+                // ctx.strokeStyle = '#00ff00';
+                // ctx.lineWidth = 3;
+                // ctx.strokeRect(start[0], start[1], size[0], size[1]);
 
                 // 繪製替換區域框（紅色）
-                ctx.strokeStyle = '#ff0000';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(drawX, drawY, expandedWidth, expandedHeight);
+                // ctx.strokeStyle = '#ff0000';
+                // ctx.lineWidth = 2;
+                // ctx.strokeRect(drawX, drawY, expandedWidth, expandedHeight);
             });
         } else {
             updateStatus('未偵測到人臉');
@@ -165,9 +171,6 @@ async function detectFaces() {
     } catch (error) {
         console.error('偵測錯誤:', error);
     }
-
-    // 繼續偵測下一幀
-    requestAnimationFrame(detectFaces);
 }
 
 // 綁定按鈕事件
