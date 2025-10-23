@@ -7,7 +7,7 @@ let isDetecting = false;
 let detectionInterval = null;
 let currentStream = null; // Track current stream
 let expandRatio = 1.75; // Configurable expansion ratio
-let currentLang = 'zh-TW'; // Current language
+let currentLang = 'en'; // Current language
 
 const startButton = document.getElementById('startButton');
 const statusDiv = document.getElementById('status');
@@ -124,7 +124,7 @@ async function init() {
     ctx = canvas.getContext('2d');
 
     // Load language preference
-    const savedLang = localStorage.getItem('preferredLanguage') || 'zh-TW';
+    const savedLang = localStorage.getItem('preferredLanguage') || 'en';
     updateLanguage(savedLang);
 
     // Load Jenson head image

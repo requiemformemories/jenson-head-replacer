@@ -81,15 +81,15 @@ http-server -p 8000
 
 1. Open the web page, the application will automatically load the face detection model
 2. **(Optional) Configure settings:**
-   - Click "⚙️ 設定" to expand the configuration panel
+   - Click "⚙️ Settings" to expand the configuration panel
    - Upload your own image to replace faces
    - Adjust the size ratio with the slider (1.0x - 3.0x)
-   - Click "重置為預設值" to restore defaults
-3. Click the "開啟相機" (Start Camera) button
+   - Click "Reset to Default" to restore defaults
+3. Click the "Start Camera" button
 4. Allow browser camera permission
 5. After camera starts, the app will automatically detect faces in the frame
 6. Detected faces will be replaced with your chosen image in real-time
-7. Click "重啟" (Reset) button to restart the camera
+7. Click "Reset" button to restart the camera
 
 ## How It Works
 
