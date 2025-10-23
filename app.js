@@ -5,6 +5,7 @@ let model;
 let jensonHeadImage;
 let isDetecting = false;
 let detectionInterval = null;
+let currentStream = null; // 追蹤當前的串流
 
 const startButton = document.getElementById('startButton');
 const statusDiv = document.getElementById('status');
@@ -57,6 +58,18 @@ async function init() {
 // 開啟相機
 async function startCamera() {
     try {
+        // 先確保之前的相機已經完全停止
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+
+        // 清除之前的計時器
+        if (detectionInterval) {
+            clearInterval(detectionInterval);
+            detectionInterval = null;
+        }
+
         updateStatus('正在開啟相機...');
 
         // 偵測是否為手機
@@ -74,50 +87,89 @@ async function startCamera() {
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream; // 保存串流引用
 
         video.srcObject = stream;
 
-        video.addEventListener('loadedmetadata', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            console.log('Canvas 設定尺寸:', canvas.width, 'x', canvas.height);
+        // 等待 metadata 載入（使用 once 選項）
+        await new Promise((resolve) => {
+            const handler = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                console.log('Canvas 設定尺寸:', canvas.width, 'x', canvas.height);
+                resolve();
+            };
+            video.addEventListener('loadedmetadata', handler, { once: true });
         });
-
-        // 等待 video 開始播放
-        video.addEventListener('playing', () => {
-            console.log('Video 開始播放');
-            updateStatus('相機已開啟，正在偵測人臉...', 'success');
-            startButton.textContent = '停止';
-            startButton.onclick = stopCamera;
-            isDetecting = true;
-            // 使用 setInterval 每 1/60 秒 (約 16.67ms) 執行一次
-            detectionInterval = setInterval(detectFaces, 1000 / 60);
-        }, { once: true });
 
         // 開始播放
         await video.play();
+
+        // 播放成功後開始偵測
+        console.log('Video 開始播放');
+        updateStatus('相機已開啟，正在偵測人臉...', 'success');
+        startButton.textContent = '重啟';
+        startButton.onclick = resetCamera;
+        isDetecting = true;
+        // 使用 setInterval 每 1/60 秒 (約 16.67ms) 執行一次
+        detectionInterval = setInterval(detectFaces, 1000 / 60);
+
     } catch (error) {
         updateStatus('無法存取相機: ' + error.message, 'error');
+        // 清理
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
     }
 }
 
-// 停止相機
-function stopCamera() {
+// 重啟相機
+async function resetCamera() {
+    console.log('重啟相機');
+
+    updateStatus('正在重啟相機...');
+    startButton.disabled = true;
+
+    // 先設置標誌為 false
     isDetecting = false;
+
     // 清除計時器
     if (detectionInterval) {
         clearInterval(detectionInterval);
         detectionInterval = null;
+        console.log('已清除計時器');
     }
-    const stream = video.srcObject;
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+
+    // 停止相機串流
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => {
+            track.stop();
+            console.log('已停止 track:', track.kind);
+        });
+        currentStream = null;
     }
-    video.srcObject = null;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    updateStatus('已停止');
-    startButton.textContent = '開啟相機';
-    startButton.onclick = startCamera;
+
+    // 清除 video source
+    if (video) {
+        video.pause();
+        video.srcObject = null;
+        video.onloadedmetadata = null;
+        video.onplay = null;
+        video.onplaying = null;
+    }
+
+    // 清空 canvas
+    if (ctx && canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // 等待一小段時間確保資源釋放
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // 重新啟動相機
+    startButton.disabled = false;
+    await startCamera();
 }
 
 // 偵測人臉並替換
