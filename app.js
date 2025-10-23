@@ -146,23 +146,31 @@ async function detectFaces() {
                 const end = prediction.bottomRight;
                 const size = [end[0] - start[0], end[1] - start[1]];
 
+                // 計算 Jenson head 圖片的長寬比
+                const jensonAspectRatio = jensonHeadImage.width / jensonHeadImage.height;
+
                 // 擴大範圍以覆蓋整個頭部（增加 75%）
                 const expandRatio = 1.75;
-                const expandedWidth = size[0] * expandRatio;
-                const expandedHeight = size[1] * expandRatio;
-                const offsetX = (expandedWidth - size[0]) / 2;
-                const offsetY = (expandedHeight - size[1]) / 2;
+                const faceWidth = size[0] * expandRatio;
 
-                const drawX = start[0] - offsetX;
-                const drawY = start[1] - offsetY;
+                // 根據圖片的長寬比計算高度，保持比例
+                let drawWidth = faceWidth;
+                let drawHeight = drawWidth / jensonAspectRatio;
 
-                // 繪製 Jenson head 圖片覆蓋在人臉上
+                // 計算中心對齊的位置
+                const faceCenterX = start[0] + size[0] / 2;
+                const faceCenterY = start[1] + size[1] / 2;
+
+                const drawX = faceCenterX - drawWidth / 2;
+                const drawY = faceCenterY - drawHeight / 2;
+
+                // 繪製 Jenson head 圖片覆蓋在人臉上（保持原始比例）
                 ctx.drawImage(
                     jensonHeadImage,
                     drawX,
                     drawY,
-                    expandedWidth,
-                    expandedHeight
+                    drawWidth,
+                    drawHeight
                 );
 
                 // 繪製偵測框（除錯用）
