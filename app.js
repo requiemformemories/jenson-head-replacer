@@ -1,160 +1,36 @@
-let video;
-let canvas;
-let ctx;
-let model;
-let jensonHeadImage;
-let isDetecting = false;
-let detectionInterval = null;
-let renderInterval = null;
-let currentStream = null; // Track current stream
-let expandRatio = 1.75; // Configurable expansion ratio
-let currentLang = 'en'; // Current language
+// Main application entry point
 
-// Performance optimization settings
-let detectionFPS = 15; // Detection frequency (lower = less jitter, less CPU)
-let smoothingFactor = 0.3; // Smoothing strength (0-1, lower = smoother but slower response)
-let lastPredictions = []; // Store last detection results
-let maxPositionJump = 100; // Maximum allowed position jump in pixels
-
-const startButton = document.getElementById('startButton');
-const statusDiv = document.getElementById('status');
-const imageUpload = document.getElementById('imageUpload');
-const expandRatioSlider = document.getElementById('expandRatio');
-const ratioValue = document.getElementById('ratioValue');
-const detectionFPSSlider = document.getElementById('detectionFPSSlider');
-const detectionFPSValue = document.getElementById('detectionFPSValue');
-const smoothingSlider = document.getElementById('smoothingSlider');
-const smoothingValue = document.getElementById('smoothingValue');
-const resetConfigButton = document.getElementById('resetConfig');
-
-// Translations for i18n
-const translations = {
-    'zh-TW': {
-        title: 'Jenson Head Replacer',
-        settings: '設定',
-        uploadLabel: '上傳替換圖片：',
-        uploadHint: '選擇要替換人臉的圖片',
-        sizeLabel: '圖片大小比例：',
-        sizeHint: '調整替換圖片的大小（1.0 = 原始人臉大小）',
-        detectionFPSLabel: '偵測頻率：',
-        detectionFPSHint: '調整臉部偵測頻率（越低越穩定但反應較慢）',
-        smoothingLabel: '平滑強度：',
-        smoothingHint: '調整位置平滑程度（越低越穩定但反應較慢）',
-        resetButton: '重置為預設值',
-        startButton: '開啟相機',
-        resetCameraButton: '重啟',
-        statusReady: '準備就緒',
-        statusLoadingImage: '正在載入 Jenson head 圖片...',
-        statusImageLoaded: '圖片載入完成',
-        statusLoadingModel: '正在載入人臉偵測模型...',
-        statusModelLoaded: '模型載入完成，請點擊按鈕開啟相機',
-        statusOpeningCamera: '正在開啟相機...',
-        statusCameraOpened: '相機已開啟，正在偵測人臉...',
-        statusDetecting: '偵測到 {count} 個人臉',
-        statusNoFace: '未偵測到人臉',
-        statusResetting: '正在重啟相機...',
-        statusNewImageLoading: '正在載入新圖片...',
-        statusNewImageLoaded: '新圖片載入成功！',
-        statusResetConfig: '正在重置為預設圖片...',
-        statusConfigReset: '已重置為預設值',
-        errorImageLoad: '圖片載入失敗',
-        errorModelLoad: '模型載入失敗',
-        errorCameraAccess: '無法存取相機',
-        errorInit: '初始化失敗'
-    },
-    'en': {
-        title: 'Jenson Head Replacer',
-        settings: 'Settings',
-        uploadLabel: 'Upload Replacement Image:',
-        uploadHint: 'Select an image to replace faces',
-        sizeLabel: 'Image Size Ratio:',
-        sizeHint: 'Adjust the size of the replacement image (1.0 = original face size)',
-        detectionFPSLabel: 'Detection FPS:',
-        detectionFPSHint: 'Adjust face detection frequency (lower = more stable but slower response)',
-        smoothingLabel: 'Smoothing Strength:',
-        smoothingHint: 'Adjust position smoothing (lower = more stable but slower response)',
-        resetButton: 'Reset to Default',
-        startButton: 'Start Camera',
-        resetCameraButton: 'Reset',
-        statusReady: 'Ready',
-        statusLoadingImage: 'Loading Jenson head image...',
-        statusImageLoaded: 'Image loaded',
-        statusLoadingModel: 'Loading face detection model...',
-        statusModelLoaded: 'Model loaded, click button to start camera',
-        statusOpeningCamera: 'Opening camera...',
-        statusCameraOpened: 'Camera opened, detecting faces...',
-        statusDetecting: 'Detected {count} face(s)',
-        statusNoFace: 'No faces detected',
-        statusResetting: 'Resetting camera...',
-        statusNewImageLoading: 'Loading new image...',
-        statusNewImageLoaded: 'New image loaded successfully!',
-        statusResetConfig: 'Resetting to default image...',
-        statusConfigReset: 'Reset to default',
-        errorImageLoad: 'Failed to load image',
-        errorModelLoad: 'Failed to load model',
-        errorCameraAccess: 'Cannot access camera',
-        errorInit: 'Initialization failed'
-    }
-};
-
-// Translation function
-function t(key, params = {}) {
-    let text = translations[currentLang][key] || key;
-    // Replace parameters
-    Object.keys(params).forEach(param => {
-        text = text.replace(`{${param}}`, params[param]);
-    });
-    return text;
-}
-
-// Update page language
-function updateLanguage(lang) {
-    currentLang = lang;
-
-    // Update all elements with data-i18n attribute
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        element.textContent = t(key);
-    });
-
-    // Update button active state
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        if (btn.getAttribute('data-lang') === lang) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-
-    // Save language preference
-    localStorage.setItem('preferredLanguage', lang);
-}
-
-// Update status message
-function updateStatus(message, type = 'normal') {
-    statusDiv.textContent = message;
-    statusDiv.className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
-}
+import { setVideo, setCanvas, setCtx, setModel, setJensonHeadImage } from './modules/state.js';
+import { loadLanguagePreference, t } from './modules/i18n.js';
+import { initializeUI, updateStatus, enableStartButton } from './modules/ui.js';
 
 // Initialize application
 async function init() {
-    video = document.getElementById('video');
-    canvas = document.getElementById('canvas');
-    ctx = canvas.getContext('2d');
+    // Get DOM elements
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set state references
+    setVideo(video);
+    setCanvas(canvas);
+    setCtx(ctx);
 
     // Load language preference
-    const savedLang = localStorage.getItem('preferredLanguage') || 'en';
-    updateLanguage(savedLang);
+    loadLanguagePreference();
+
+    // Initialize UI event listeners
+    initializeUI();
 
     // Load Jenson head image
     updateStatus(t('statusLoadingImage'));
-    jensonHeadImage = new Image();
+    const jensonHeadImage = new Image();
     jensonHeadImage.src = 'jenson_head.webp';
 
     try {
         await new Promise((resolve, reject) => {
             jensonHeadImage.onload = () => {
-                console.log('Jenson head 圖片載入成功:', jensonHeadImage.width, 'x', jensonHeadImage.height);
+                console.log('Jenson head image loaded:', jensonHeadImage.width, 'x', jensonHeadImage.height);
                 resolve();
             };
             jensonHeadImage.onerror = (e) => {
@@ -162,6 +38,7 @@ async function init() {
                 reject(new Error('Failed to load jenson_head.webp'));
             };
         });
+        setJensonHeadImage(jensonHeadImage);
         updateStatus(t('statusImageLoaded'));
     } catch (error) {
         updateStatus(t('errorImageLoad') + ': ' + error.message, 'error');
@@ -171,397 +48,14 @@ async function init() {
     // Load face detection model
     updateStatus(t('statusLoadingModel'));
     try {
-        model = await blazeface.load();
+        const model = await blazeface.load();
+        setModel(model);
         updateStatus(t('statusModelLoaded'), 'success');
-        startButton.disabled = false;
+        enableStartButton();
     } catch (error) {
         updateStatus(t('errorModelLoad') + ': ' + error.message, 'error');
     }
 }
-
-// Start camera
-async function startCamera() {
-    try {
-        // Ensure previous camera is fully stopped
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
-        }
-
-        // Clear previous intervals
-        if (detectionInterval) {
-            clearInterval(detectionInterval);
-            detectionInterval = null;
-        }
-        if (renderInterval) {
-            clearInterval(renderInterval);
-            renderInterval = null;
-        }
-
-        updateStatus(t('statusOpeningCamera'));
-
-        // Detect if mobile device
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-        const constraints = {
-            video: isMobile ? {
-                facingMode: 'environment', // Use rear camera on mobile
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            } : {
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            }
-        };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        currentStream = stream; // Save stream reference
-
-        video.srcObject = stream;
-
-        // Wait for metadata to load (using once option)
-        await new Promise((resolve) => {
-            const handler = () => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                console.log('Canvas dimensions set:', canvas.width, 'x', canvas.height);
-                resolve();
-            };
-            video.addEventListener('loadedmetadata', handler, { once: true });
-        });
-
-        // Start playback
-        await video.play();
-
-        // Start detection and rendering after playback begins
-        console.log('Video playback started');
-        updateStatus(t('statusCameraOpened'), 'success');
-        startButton.textContent = t('resetCameraButton');
-        startButton.onclick = resetCamera;
-        isDetecting = true;
-
-        // Separate detection and rendering intervals
-        // Render at 60 FPS for smooth display
-        renderInterval = setInterval(render, 1000 / 60);
-        // Detect at lower FPS to reduce jitter and CPU usage
-        detectionInterval = setInterval(detectFaces, 1000 / detectionFPS);
-
-        console.log(`Rendering at 60 FPS, detecting at ${detectionFPS} FPS`);
-
-    } catch (error) {
-        updateStatus(t('errorCameraAccess') + ': ' + error.message, 'error');
-        // Cleanup
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
-        }
-    }
-}
-
-// Reset camera
-async function resetCamera() {
-    console.log('Resetting camera');
-
-    updateStatus(t('statusResetting'));
-    startButton.disabled = true;
-
-    // Set flag to false
-    isDetecting = false;
-
-    // Clear intervals
-    if (detectionInterval) {
-        clearInterval(detectionInterval);
-        detectionInterval = null;
-        console.log('Detection interval cleared');
-    }
-    if (renderInterval) {
-        clearInterval(renderInterval);
-        renderInterval = null;
-        console.log('Render interval cleared');
-    }
-
-    // Clear stored predictions
-    lastPredictions = [];
-
-    // Stop camera stream
-    if (currentStream) {
-        currentStream.getTracks().forEach(track => {
-            track.stop();
-            console.log('Stopped track:', track.kind);
-        });
-        currentStream = null;
-    }
-
-    // Clear video source
-    if (video) {
-        video.pause();
-        video.srcObject = null;
-        video.onloadedmetadata = null;
-        video.onplay = null;
-        video.onplaying = null;
-    }
-
-    // Clear canvas
-    if (ctx && canvas) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Wait briefly to ensure resources are released
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Restart camera
-    startButton.disabled = false;
-    await startCamera();
-}
-
-// Smooth predictions using exponential moving average (EMA)
-function smoothPredictions(newPredictions) {
-    if (lastPredictions.length === 0) {
-        // First detection, no smoothing needed
-        return newPredictions;
-    }
-
-    // If number of faces changed, reset smoothing
-    if (newPredictions.length !== lastPredictions.length) {
-        return newPredictions;
-    }
-
-    return newPredictions.map((newPred, index) => {
-        const lastPred = lastPredictions[index];
-        if (!lastPred) return newPred;
-
-        // Check for sudden large jumps (outlier detection)
-        const newCenter = [
-            (newPred.topLeft[0] + newPred.bottomRight[0]) / 2,
-            (newPred.topLeft[1] + newPred.bottomRight[1]) / 2
-        ];
-        const lastCenter = [
-            (lastPred.topLeft[0] + lastPred.bottomRight[0]) / 2,
-            (lastPred.topLeft[1] + lastPred.bottomRight[1]) / 2
-        ];
-
-        const distance = Math.sqrt(
-            Math.pow(newCenter[0] - lastCenter[0], 2) +
-            Math.pow(newCenter[1] - lastCenter[1], 2)
-        );
-
-        // If jump is too large, it might be a detection error, use more of the old position
-        const effectiveSmoothingFactor = distance > maxPositionJump
-            ? smoothingFactor * 0.3  // Use only 30% of new position if jump is large
-            : smoothingFactor;
-
-        // Apply exponential moving average
-        return {
-            topLeft: [
-                lastPred.topLeft[0] * (1 - effectiveSmoothingFactor) + newPred.topLeft[0] * effectiveSmoothingFactor,
-                lastPred.topLeft[1] * (1 - effectiveSmoothingFactor) + newPred.topLeft[1] * effectiveSmoothingFactor
-            ],
-            bottomRight: [
-                lastPred.bottomRight[0] * (1 - effectiveSmoothingFactor) + newPred.bottomRight[0] * effectiveSmoothingFactor,
-                lastPred.bottomRight[1] * (1 - effectiveSmoothingFactor) + newPred.bottomRight[1] * effectiveSmoothingFactor
-            ],
-            landmarks: newPred.landmarks,
-            probability: newPred.probability
-        };
-    });
-}
-
-// Detect faces (runs at lower FPS)
-async function detectFaces() {
-    if (!isDetecting) return;
-
-    // Check if video is ready
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-        return;
-    }
-
-    try {
-        // Detect faces from video
-        const predictions = await model.estimateFaces(video, false);
-
-        if (predictions.length > 0) {
-            // Apply smoothing and boundary checking
-            const smoothedPredictions = smoothPredictions(predictions);
-            lastPredictions = smoothedPredictions;
-
-            updateStatus(t('statusDetecting', { count: predictions.length }), 'success');
-        } else {
-            lastPredictions = [];
-            updateStatus(t('statusNoFace'));
-        }
-    } catch (error) {
-        console.error('Detection error:', error);
-    }
-}
-
-// Render frame (runs at 60 FPS)
-function render() {
-    if (!isDetecting) return;
-
-    // Check if video is ready
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-        return;
-    }
-
-    // Draw entire video frame to canvas
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Draw Jenson heads using stored predictions
-    if (lastPredictions.length > 0) {
-        lastPredictions.forEach((prediction) => {
-            // Get face position
-            const start = prediction.topLeft;
-            const end = prediction.bottomRight;
-            const size = [end[0] - start[0], end[1] - start[1]];
-
-            // Calculate Jenson head image aspect ratio
-            const jensonAspectRatio = jensonHeadImage.width / jensonHeadImage.height;
-
-            // Use configurable expansion range
-            const faceWidth = size[0] * expandRatio;
-
-            // Calculate height based on aspect ratio to maintain proportions
-            let drawWidth = faceWidth;
-            let drawHeight = drawWidth / jensonAspectRatio;
-
-            // Calculate center-aligned position
-            const faceCenterX = start[0] + size[0] / 2;
-            const faceCenterY = start[1] + size[1] / 2;
-
-            const drawX = faceCenterX - drawWidth / 2;
-            const drawY = faceCenterY - drawHeight / 2;
-
-            // Draw Jenson head image over face (maintaining original aspect ratio)
-            ctx.drawImage(
-                jensonHeadImage,
-                drawX,
-                drawY,
-                drawWidth,
-                drawHeight
-            );
-
-            // Draw detection box (for debugging)
-            // ctx.strokeStyle = '#00ff00';
-            // ctx.lineWidth = 3;
-            // ctx.strokeRect(start[0], start[1], size[0], size[1]);
-
-            // Draw replacement area box (red)
-            // ctx.strokeStyle = '#ff0000';
-            // ctx.lineWidth = 2;
-            // ctx.strokeRect(drawX, drawY, drawWidth, drawHeight);
-        });
-    }
-}
-
-// Bind button events
-startButton.addEventListener('click', startCamera);
-startButton.disabled = true;
-
-// Configuration features
-
-// Upload image
-imageUpload.addEventListener('change', async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-        updateStatus(t('statusNewImageLoading'));
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const newImage = new Image();
-            newImage.src = e.target.result;
-
-            await new Promise((resolve, reject) => {
-                newImage.onload = () => {
-                    jensonHeadImage = newImage;
-                    console.log('New image loaded:', jensonHeadImage.width, 'x', jensonHeadImage.height);
-                    updateStatus(t('statusNewImageLoaded'), 'success');
-                    resolve();
-                };
-                newImage.onerror = reject;
-            });
-        };
-        reader.readAsDataURL(file);
-    } catch (error) {
-        updateStatus(t('errorImageLoad') + ': ' + error.message, 'error');
-    }
-});
-
-// Adjust size ratio
-expandRatioSlider.addEventListener('input', (event) => {
-    expandRatio = parseFloat(event.target.value);
-    ratioValue.textContent = expandRatio.toFixed(2);
-});
-
-// Adjust detection FPS
-detectionFPSSlider.addEventListener('input', (event) => {
-    detectionFPS = parseInt(event.target.value);
-    detectionFPSValue.textContent = detectionFPS;
-
-    // If detection is already running, restart the detection interval with new FPS
-    if (isDetecting && detectionInterval) {
-        clearInterval(detectionInterval);
-        detectionInterval = setInterval(detectFaces, 1000 / detectionFPS);
-        console.log(`Detection FPS updated to ${detectionFPS}`);
-    }
-});
-
-// Adjust smoothing factor
-smoothingSlider.addEventListener('input', (event) => {
-    smoothingFactor = parseFloat(event.target.value);
-    smoothingValue.textContent = smoothingFactor.toFixed(2);
-});
-
-// Reset configuration
-resetConfigButton.addEventListener('click', async () => {
-    // Reset ratio
-    expandRatio = 1.75;
-    expandRatioSlider.value = 1.75;
-    ratioValue.textContent = '1.75';
-
-    // Reset detection FPS
-    detectionFPS = 15;
-    detectionFPSSlider.value = 15;
-    detectionFPSValue.textContent = '15';
-
-    // Reset smoothing factor
-    smoothingFactor = 0.3;
-    smoothingSlider.value = 0.3;
-    smoothingValue.textContent = '0.30';
-
-    // Restart detection interval with new FPS if running
-    if (isDetecting && detectionInterval) {
-        clearInterval(detectionInterval);
-        detectionInterval = setInterval(detectFaces, 1000 / detectionFPS);
-        console.log('Detection interval restarted with default FPS');
-    }
-
-    // Reload default image
-    updateStatus(t('statusResetConfig'));
-    jensonHeadImage = new Image();
-    jensonHeadImage.src = 'jenson_head.webp';
-
-    await new Promise((resolve, reject) => {
-        jensonHeadImage.onload = () => {
-            console.log('Reset to default image');
-            updateStatus(t('statusConfigReset'), 'success');
-            resolve();
-        };
-        jensonHeadImage.onerror = reject;
-    });
-
-    // Clear file input
-    imageUpload.value = '';
-});
-
-// Language switch events
-document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const lang = btn.getAttribute('data-lang');
-        updateLanguage(lang);
-    });
-});
 
 // Start application
 init().catch(error => {
