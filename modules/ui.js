@@ -114,7 +114,7 @@ export function initializeUI() {
         // Reload default image
         updateStatus(t('statusResetConfig'));
         const jensonHeadImage = new Image();
-        jensonHeadImage.src = 'jenson_head.webp';
+        jensonHeadImage.src = import.meta.env.BASE_URL + 'jenson_head.webp';
 
         await new Promise((resolve, reject) => {
             jensonHeadImage.onload = () => {

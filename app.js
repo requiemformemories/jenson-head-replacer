@@ -25,7 +25,7 @@ async function init() {
     // Load Jenson head image
     updateStatus(t('statusLoadingImage'));
     const jensonHeadImage = new Image();
-    jensonHeadImage.src = 'jenson_head.webp';
+    jensonHeadImage.src = import.meta.env.BASE_URL + 'jenson_head.webp';
 
     try {
         await new Promise((resolve, reject) => {
