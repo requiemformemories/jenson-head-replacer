@@ -54,7 +54,27 @@ export async function startCamera() {
             }
         };
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        let stream;
+        let retryCount = 0;
+        const maxRetries = 2;
+
+        // Retry logic for handling permission timing issues on mobile
+        while (retryCount < maxRetries) {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                break;
+            } catch (err) {
+                if (err.name === 'NotAllowedError' && retryCount < maxRetries - 1) {
+                    console.log('Permission timing issue detected, retrying...');
+                    retryCount++;
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    continue;
+                }
+
+                throw err;
+            }
+        }
+
         setCurrentStream(stream);
 
         video.srcObject = stream;
